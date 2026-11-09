@@ -95,4 +95,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t secwatch:ci .
-      - run: docker run --rm -v "$PWD:/work" secwatch:ci iac --plan sample_data/tfplan_secure.json --fail-on low
+      - run: docker run --rm -v "$PWD:/work" secwatch:ci iac --plan sample_data/tfplan_secure.json -o /tmp/reports --fail-on low
