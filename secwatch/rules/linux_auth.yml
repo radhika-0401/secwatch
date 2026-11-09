@@ -1,0 +1,88 @@
+- id: AUTH-001
+  title: SSH brute force against a single account source
+  source: auth
+  type: threshold
+  severity: high
+  description: Many failed SSH logins from one IP in a short window, typical of password guessing.
+  conditions:
+    action: {equals: ssh_failed}
+  group_by: [src_ip]
+  count: 10
+  window_seconds: 300
+  mitre: {tactic: Credential Access, technique: T1110.001 Password Guessing}
+  remediation: Block the source IP, enforce key-based SSH authentication, and deploy fail2ban or equivalent rate limiting.
+
+- id: AUTH-002
+  title: SSH password spraying across many usernames
+  source: auth
+  type: threshold
+  severity: high
+  description: One IP tried many different usernames, which suggests password spraying or username enumeration.
+  conditions:
+    action: {equals: ssh_failed}
+  group_by: [src_ip]
+  distinct: user
+  count: 5
+  window_seconds: 600
+  mitre: {tactic: Credential Access, technique: T1110.003 Password Spraying}
+  remediation: Block the source, review whether any targeted account later logged in successfully, and disable password authentication.
+
+- id: AUTH-003
+  title: Successful SSH login as root
+  source: auth
+  severity: high
+  description: Direct root login over SSH bypasses individual accountability and should be disabled.
+  conditions:
+    action: {equals: ssh_accepted}
+    user: {equals: root}
+  mitre: {tactic: Initial Access, technique: T1078 Valid Accounts}
+  remediation: Set PermitRootLogin no in sshd_config and require named accounts with sudo.
+
+- id: AUTH-004
+  title: Successful SSH login after repeated failures
+  source: auth
+  type: sequence
+  severity: critical
+  description: Several failed logins were followed by a success from the same IP, suggesting a brute force attack worked.
+  conditions:
+    action: {equals: ssh_failed}
+  then:
+    action: {equals: ssh_accepted}
+  group_by: [src_ip]
+  count: 5
+  window_seconds: 900
+  mitre: {tactic: Credential Access, technique: T1110 Brute Force}
+  remediation: Treat the account as compromised, reset credentials, end active sessions, and review what the session did.
+
+- id: AUTH-005
+  title: Sensitive file accessed via sudo
+  source: auth
+  severity: high
+  description: A user ran a sudo command touching credential stores such as /etc/shadow.
+  conditions:
+    action: {equals: sudo}
+    command: {regex: ['/etc/shadow', '/etc/sudoers', '\.ssh/authorized_keys']}
+  mitre: {tactic: Credential Access, technique: T1003.008 /etc/passwd and /etc/shadow}
+  remediation: Confirm the activity was authorized and restrict sudo rules to the minimum commands needed.
+
+- id: AUTH-006
+  title: Local account created with UID 0
+  source: auth
+  severity: critical
+  description: A new account was created with root's UID, a common persistence technique.
+  conditions:
+    action: {equals: user_created}
+    uid: {equals: 0}
+  mitre: {tactic: Persistence, technique: T1136.001 Create Account - Local Account}
+  remediation: Remove the account, audit /etc/passwd for other UID 0 entries, and investigate how it was created.
+
+- id: AUTH-007
+  title: New local account created
+  source: auth
+  severity: low
+  description: A new local account was created. Low severity by itself, but useful context during investigations.
+  conditions:
+    action: {equals: user_created}
+    uid: {gte: 1}
+  mitre: {tactic: Persistence, technique: T1136.001 Create Account - Local Account}
+  remediation: Verify the account matches an approved change request.

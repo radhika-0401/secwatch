@@ -1,0 +1,9 @@
+# Sample sshd_config with deliberate weaknesses for SecWatch demos
+Port 22
+PermitRootLogin yes
+PasswordAuthentication yes
+PermitEmptyPasswords no
+MaxAuthTries 6
+X11Forwarding yes
+UsePAM yes
+Subsystem sftp /usr/lib/openssh/sftp-server

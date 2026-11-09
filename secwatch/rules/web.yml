@@ -1,0 +1,62 @@
+- id: WEB-001
+  title: SQL injection attempt in request
+  source: web
+  severity: high
+  description: The request path contains common SQL injection payload patterns.
+  conditions:
+    path_decoded:
+      regex: ["(?i)union(\\s|\\+)+select", "(?i)'\\s*or\\s*'?1'?\\s*=\\s*'?1", "(?i)sleep\\(\\d+\\)", "(?i);\\s*drop\\s+table", "(?i)information_schema"]
+  group_by: [src_ip]
+  mitre: {tactic: Initial Access, technique: T1190 Exploit Public-Facing Application}
+  remediation: Confirm queries are parameterized, review the WAF rules, and check whether any of these requests returned 200 with unusual sizes.
+
+- id: WEB-002
+  title: Path traversal attempt
+  source: web
+  severity: high
+  description: The request attempts to escape the web root to read local files.
+  conditions:
+    path_decoded:
+      regex: ["\\.\\./", "/etc/passwd", "(?i)c:\\\\windows"]
+  group_by: [src_ip]
+  mitre: {tactic: Initial Access, technique: T1190 Exploit Public-Facing Application}
+  remediation: Validate and canonicalize file paths server-side, and block the source IP.
+
+- id: WEB-003
+  title: Known vulnerability scanner user agent
+  source: web
+  severity: medium
+  description: The user agent matches a well-known automated scanning tool.
+  conditions:
+    user_agent:
+      regex: ["(?i)sqlmap", "(?i)nikto", "(?i)nmap", "(?i)masscan", "(?i)wpscan", "(?i)gobuster", "(?i)dirbuster"]
+  group_by: [src_ip]
+  mitre: {tactic: Reconnaissance, technique: T1595.002 Vulnerability Scanning}
+  remediation: Rate-limit or block the source, and confirm scanning is not from an authorized internal assessment.
+
+- id: WEB-004
+  title: Directory brute forcing (burst of 404 responses)
+  source: web
+  type: threshold
+  severity: medium
+  description: One IP generated many 404 responses quickly, consistent with wordlist-based content discovery.
+  conditions:
+    status: {equals: 404}
+  group_by: [src_ip]
+  count: 20
+  window_seconds: 120
+  mitre: {tactic: Reconnaissance, technique: T1595.003 Wordlist Scanning}
+  remediation: Rate-limit the source and make sure no sensitive paths (backups, .git, admin panels) are exposed.
+
+- id: WEB-005
+  title: Access to sensitive files or admin paths
+  source: web
+  severity: medium
+  description: A request targeted files that should never be publicly exposed, such as .env or .git.
+  conditions:
+    path_decoded:
+      regex: ["/\\.env", "/\\.git/", "/wp-admin", "/phpmyadmin", "\\.bak$", "/server-status"]
+    status: {in: [200, 301, 302, 403]}
+  group_by: [src_ip]
+  mitre: {tactic: Reconnaissance, technique: T1595.003 Wordlist Scanning}
+  remediation: Confirm these paths return 404, and rotate any secrets if a 200 response was served for .env or .git.

@@ -1,0 +1,132 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.8.5",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_security_group.web",
+          "mode": "managed",
+          "type": "aws_security_group",
+          "name": "web",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "name": "web-sg",
+            "ingress": [
+              {
+                "description": "HTTPS",
+                "from_port": 443,
+                "to_port": 443,
+                "protocol": "tcp",
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ],
+                "ipv6_cidr_blocks": []
+              },
+              {
+                "description": "SSH from anywhere (bad)",
+                "from_port": 22,
+                "to_port": 22,
+                "protocol": "tcp",
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ],
+                "ipv6_cidr_blocks": []
+              }
+            ]
+          }
+        },
+        {
+          "address": "aws_s3_bucket.reports",
+          "mode": "managed",
+          "type": "aws_s3_bucket",
+          "name": "reports",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "bucket": "secwatch-demo-reports-111122223333"
+          }
+        },
+        {
+          "address": "aws_s3_bucket_acl.reports",
+          "mode": "managed",
+          "type": "aws_s3_bucket_acl",
+          "name": "reports",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "acl": "public-read"
+          }
+        },
+        {
+          "address": "aws_s3_bucket_public_access_block.reports",
+          "mode": "managed",
+          "type": "aws_s3_bucket_public_access_block",
+          "name": "reports",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "block_public_acls": false,
+            "block_public_policy": false,
+            "ignore_public_acls": true,
+            "restrict_public_buckets": true
+          }
+        },
+        {
+          "address": "aws_db_instance.app",
+          "mode": "managed",
+          "type": "aws_db_instance",
+          "name": "app",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "identifier": "app-db",
+            "engine": "postgres",
+            "storage_encrypted": false,
+            "publicly_accessible": true
+          }
+        },
+        {
+          "address": "aws_ebs_volume.data",
+          "mode": "managed",
+          "type": "aws_ebs_volume",
+          "name": "data",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "availability_zone": "us-east-1a",
+            "size": 50,
+            "encrypted": false
+          }
+        },
+        {
+          "address": "aws_iam_policy.too_broad",
+          "mode": "managed",
+          "type": "aws_iam_policy",
+          "name": "too_broad",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "name": "developer-everything",
+            "policy": "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Action\": \"*\", \"Resource\": \"*\"}]}"
+          }
+        },
+        {
+          "address": "aws_cloudtrail.main",
+          "mode": "managed",
+          "type": "aws_cloudtrail",
+          "name": "main",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": {
+            "name": "org-trail",
+            "enable_logging": true,
+            "is_multi_region_trail": false,
+            "enable_log_file_validation": false
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,98 @@
+- id: AWS-001
+  title: AWS root account activity
+  source: cloudtrail
+  severity: high
+  description: The root user performed an API or console action. Root should be locked away and used only for break-glass tasks.
+  conditions:
+    identity_type: {equals: Root}
+  group_by: [event_name, src_ip]
+  mitre: {tactic: Privilege Escalation, technique: T1078.004 Cloud Accounts}
+  remediation: Confirm the activity was approved, ensure root has hardware MFA, and use IAM roles for daily work.
+
+- id: AWS-002
+  title: Console login without MFA
+  source: cloudtrail
+  severity: high
+  description: A successful AWS console login did not use multi-factor authentication.
+  conditions:
+    event_name: {equals: ConsoleLogin}
+    login_result: {equals: Success}
+    mfa_used: {equals: "No"}
+  group_by: [user, src_ip]
+  mitre: {tactic: Initial Access, technique: T1078.004 Cloud Accounts}
+  remediation: Enforce MFA with an IAM policy condition (aws:MultiFactorAuthPresent) and require MFA enrollment.
+
+- id: AWS-003
+  title: CloudTrail logging stopped or deleted
+  source: cloudtrail
+  severity: critical
+  description: Someone disabled or deleted audit logging, a common step to hide malicious activity.
+  conditions:
+    event_name: {in: [StopLogging, DeleteTrail, UpdateTrail, PutEventSelectors]}
+  group_by: [user, event_name]
+  mitre: {tactic: Defense Evasion, technique: T1562.008 Disable or Modify Cloud Logs}
+  remediation: Re-enable the trail, protect it with an SCP that denies StopLogging/DeleteTrail, and investigate the actor.
+
+- id: AWS-004
+  title: Security group opened to the internet
+  source: cloudtrail
+  severity: high
+  description: An ingress rule allowing 0.0.0.0/0 or ::/0 was added to a security group.
+  conditions:
+    event_name: {equals: AuthorizeSecurityGroupIngress}
+    request: {contains: ["0.0.0.0/0", "::/0"]}
+  group_by: [user]
+  mitre: {tactic: Defense Evasion, technique: T1562.007 Disable or Modify Cloud Firewall}
+  remediation: Restrict the rule to known CIDRs or use SSM Session Manager instead of public SSH/RDP.
+
+- id: AWS-005
+  title: Administrator policy attached to an identity
+  source: cloudtrail
+  severity: high
+  description: AdministratorAccess (or another full-access policy) was attached to a user, group, or role.
+  conditions:
+    event_name: {in: [AttachUserPolicy, AttachRolePolicy, AttachGroupPolicy]}
+    request: {contains: "AdministratorAccess"}
+  group_by: [user]
+  mitre: {tactic: Persistence, technique: T1098 Account Manipulation}
+  remediation: Verify against change management, and prefer least-privilege, role-based access.
+
+- id: AWS-006
+  title: New IAM access key created
+  source: cloudtrail
+  severity: medium
+  description: A long-lived access key was created, which attackers use to keep access to a cloud account.
+  conditions:
+    event_name: {equals: CreateAccessKey}
+  group_by: [user]
+  mitre: {tactic: Persistence, technique: T1098.001 Additional Cloud Credentials}
+  remediation: Confirm the key is expected; prefer short-lived role credentials over IAM user keys.
+
+- id: AWS-007
+  title: Burst of AccessDenied errors (cloud reconnaissance)
+  source: cloudtrail
+  type: threshold
+  severity: medium
+  description: Many denied API calls from one identity, which often means stolen credentials are being used to explore permissions.
+  conditions:
+    error_code: {in: [AccessDenied, UnauthorizedOperation, Client.UnauthorizedOperation]}
+  group_by: [user_arn]
+  count: 8
+  window_seconds: 300
+  mitre: {tactic: Discovery, technique: T1580 Cloud Infrastructure Discovery}
+  remediation: Investigate where the credentials are being used, and rotate them if the activity is not recognized.
+
+- id: AWS-008
+  title: Repeated failed console logins
+  source: cloudtrail
+  type: threshold
+  severity: medium
+  description: Several failed AWS console logins in a short window.
+  conditions:
+    event_name: {equals: ConsoleLogin}
+    login_result: {equals: Failure}
+  group_by: [src_ip]
+  count: 5
+  window_seconds: 600
+  mitre: {tactic: Credential Access, technique: T1110 Brute Force}
+  remediation: Confirm MFA is enforced and review the targeted accounts.
