@@ -31,14 +31,11 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "S"]
-ignore = ["S101", "E501"]  # asserts are fine in tests; long lines are HTML templates and sample data
+ignore = ["S101", "E501"]
 
 [tool.ruff.lint.per-file-ignores]
-"scripts/*" = ["S311"]  # non-cryptographic random is intended for sample data
-
-[tool.ruff.lint.per-file-ignores]
-"scripts/*" = ["S311"]  # non-cryptographic random is intended for sample data
-"tests/*" = ["S"]  # security lint rules flag fake test fixtures such as /etc/passwd content
+"scripts/*" = ["S311"]
+"tests/*" = ["S"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
